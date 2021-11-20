@@ -110,6 +110,15 @@ public class Tetromino : MonoBehaviour
     {
         foreach (Transform transform in Blocks)
         {
+            foreach (Transform t in transform)
+            {
+                t.gameObject.tag = "Block";
+                t.gameObject.SetActive(true);
+                if (t.gameObject.name == "Whole")
+                {
+                    t.gameObject.SetActive(false);
+                }
+            }
             transform.gameObject.tag = "Block";
             GameController.Blocks.Add(transform);
             
@@ -124,7 +133,7 @@ public class Tetromino : MonoBehaviour
             DropBlocks();
             InitBlocks((TetrominoType)Mathf.RoundToInt(Random.Range(0, 6)));
         }
-        else if (collision.tag == "Block")
+        else if (collision.tag == "Block" && collision.name == "Top")
         {
             DropBlocks();
             InitBlocks((TetrominoType)Mathf.RoundToInt(Random.Range(0, 6)));
