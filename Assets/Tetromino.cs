@@ -7,12 +7,12 @@ public class Tetromino : MonoBehaviour
     public GameObject Block;
     public GameController GameController;
 
-    private List<Transform> Blocks = new List<Transform>();
+    private List<Block> Blocks = new List<Block>();
 
     // Start is called before the first frame update
     void Start()
     {
-        InitBlocks(TetrominoType.Line);
+        InitBlocks(TetrominoType.T);
     }
 
     // Update is called once per frame
@@ -36,61 +36,62 @@ public class Tetromino : MonoBehaviour
     {
         if (type == TetrominoType.Line)
         {
-            CreateNewBlock(new Vector3(-1.5f, 9.5f));
-            CreateNewBlock(new Vector3(-.5f, 9.5f));
-            CreateNewBlock(new Vector3(.5f, 9.5f));
-            CreateNewBlock(new Vector3(1.5f, 9.5f));
+            CreateNewBlock(new Vector3(3, 20));
+            CreateNewBlock(new Vector3(4, 20));
+            CreateNewBlock(new Vector3(5, 20));
+            CreateNewBlock(new Vector3(6, 20));
         }
         if (type == TetrominoType.LeftZZ)
         {
-            CreateNewBlock(new Vector3(-.5f, 9.5f));
-            CreateNewBlock(new Vector3(.5f, 9.5f));
-            CreateNewBlock(new Vector3(.5f, 10.5f));
-            CreateNewBlock(new Vector3(1.5f, 10.5f));
+            CreateNewBlock(new Vector3(4, 20));
+            CreateNewBlock(new Vector3(5, 20));
+            CreateNewBlock(new Vector3(5, 21));
+            CreateNewBlock(new Vector3(6, 21));
         }
         if (type == TetrominoType.RightZZ)
         {
-            CreateNewBlock(new Vector3(1.5f, 9.5f));
-            CreateNewBlock(new Vector3(.5f, 9.5f));
-            CreateNewBlock(new Vector3(.5f, 10.5f));
-            CreateNewBlock(new Vector3(-.5f, 10.5f));
+            CreateNewBlock(new Vector3(6, 20));
+            CreateNewBlock(new Vector3(5, 20));
+            CreateNewBlock(new Vector3(5, 21));
+            CreateNewBlock(new Vector3(4, 21));
         }
         if (type == TetrominoType.L)
         {
-            CreateNewBlock(new Vector3(-.5f, 11.5f));
-            CreateNewBlock(new Vector3(-.5f, 10.5f));
-            CreateNewBlock(new Vector3(-.5f, 9.5f));
-            CreateNewBlock(new Vector3(.5f, 9.5f));
+            CreateNewBlock(new Vector3(4, 22));
+            CreateNewBlock(new Vector3(4, 21));
+            CreateNewBlock(new Vector3(4, 20));
+            CreateNewBlock(new Vector3(5, 20));
         }
         if (type == TetrominoType.ReverseL)
         {
-            CreateNewBlock(new Vector3(.5f, 11.5f));
-            CreateNewBlock(new Vector3(.5f, 10.5f));
-            CreateNewBlock(new Vector3(.5f, 9.5f));
-            CreateNewBlock(new Vector3(-.5f, 9.5f));
+            CreateNewBlock(new Vector3(5, 22));
+            CreateNewBlock(new Vector3(5, 21));
+            CreateNewBlock(new Vector3(5, 20));
+            CreateNewBlock(new Vector3(4, 20));
         }
         if (type == TetrominoType.Square)
         {
-            CreateNewBlock(new Vector3(-.5f, 9.5f));
-            CreateNewBlock(new Vector3(-.5f, 10.5f));
-            CreateNewBlock(new Vector3(.5f, 9.5f));
-            CreateNewBlock(new Vector3(.5f, 10.5f));
+            CreateNewBlock(new Vector3(4, 20));
+            CreateNewBlock(new Vector3(4, 21));
+            CreateNewBlock(new Vector3(5, 20));
+            CreateNewBlock(new Vector3(5, 21f));
         }
         if (type == TetrominoType.T)
         {
-            CreateNewBlock(new Vector3(1.5f, 9.5f));
-            CreateNewBlock(new Vector3(.5f, 9.5f));
-            CreateNewBlock(new Vector3(-.5f, 9.5f));
-            CreateNewBlock(new Vector3(.5f, 10.5f));
+            CreateNewBlock(new Vector3(6, 20));
+            CreateNewBlock(new Vector3(5, 20));
+            CreateNewBlock(new Vector3(4, 20));
+            CreateNewBlock(new Vector3(5, 21));
         }
     }
 
     private void CreateNewBlock(Vector3 position)
     {
-        GameObject NewBlock = Instantiate(Block);
-        NewBlock.transform.position = position;
-        NewBlock.GetComponent<Block>().Tetromino = this;
-        Blocks.Add(NewBlock.transform);
+        int x = Mathf.RoundToInt(position.x);
+        int y = Mathf.RoundToInt(position.y);
+        Block block = new Block(x, y);
+        Blocks.Add(block);
+        GameController.Blocks[block.X, block.Y] = block;
     }
 
     private void FixedUpdate()
@@ -100,44 +101,50 @@ public class Tetromino : MonoBehaviour
 
     private void Move(Vector2 direction)
     {
-        foreach (Transform transform in Blocks)
+        List<Block> conflictingBlocks = FindConflictsInMove(direction);
+        if (conflictingBlocks.Count != 0 && direction.y < 0)
         {
-            transform.position = new Vector3(transform.position.x + direction.x, transform.position.y + direction.y);
+            DropBlocks();
+            return;
         }
+        if (conflictingBlocks.Count != 0 && direction.x < 0)
+        {
+            return;
+        }
+        if (conflictingBlocks.Count != 0 && direction.x > 0)
+        {
+            return;
+        }
+        foreach (Block block in Blocks)
+        {
+            int NewX = block.X + Mathf.RoundToInt(direction.x);
+            int NewY = block.Y + Mathf.RoundToInt(direction.y);
+            GameController.Blocks[block.X, block.Y] = null;
+            GameController.Blocks[NewX, NewY] = block;
+            block.X = NewX;
+            block.Y = NewY;
+        }
+    }
+
+    private List<Block> FindConflictsInMove(Vector2 direction)
+    {
+        List<Block> conflictingBlocks = new List<Block>();
+        foreach (Block block in Blocks)
+        {
+            int NewX = block.X + (int)direction.x;
+            int NewY = block.Y + (int)direction.y;
+            if (NewY < 0 || NewX < 0 || NewX > 9 || (GameController.Blocks[NewX, NewY] != null) && !Blocks.Contains(GameController.Blocks[NewX, NewY]))
+            {
+                conflictingBlocks.Add(block);
+            }
+        }
+        return conflictingBlocks;
     }
 
     private void DropBlocks()
     {
-        foreach (Transform transform in Blocks)
-        {
-            foreach (Transform t in transform)
-            {
-                t.gameObject.tag = "Block";
-                t.gameObject.SetActive(true);
-                if (t.gameObject.name == "Whole")
-                {
-                    t.gameObject.SetActive(false);
-                }
-            }
-            transform.gameObject.tag = "Block";
-            GameController.Blocks.Add(transform);
-            
-        }
         Blocks.Clear();
-    }
-
-    public void BlockTouch(Collider2D collision)
-    {
-        if (collision.tag == "Bottom")
-        {
-            DropBlocks();
-            InitBlocks((TetrominoType)Mathf.RoundToInt(Random.Range(0, 6)));
-        }
-        else if (collision.tag == "Block" && collision.name == "Top")
-        {
-            DropBlocks();
-            InitBlocks((TetrominoType)Mathf.RoundToInt(Random.Range(0, 6)));
-        }
+        InitBlocks((TetrominoType)Mathf.RoundToInt(Random.Range(0, 6)));
     }
 }
 public enum TetrominoType {
