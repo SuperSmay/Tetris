@@ -1,4 +1,5 @@
 using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,7 +8,7 @@ public class Tetromino : MonoBehaviour
     public GameObject Block;
     public GameController GameController;
 
-    private List<Block> Blocks = new List<Block>();
+    private List<GameObject> Blocks = new List<GameObject>();
 
     // Start is called before the first frame update
     void Start()
@@ -79,9 +80,9 @@ public class Tetromino : MonoBehaviour
         if (type == TetrominoType.T)
         {
             CreateNewBlock(new Vector3(6, 20));
-            CreateNewBlock(new Vector3(5, 20));
-            CreateNewBlock(new Vector3(4, 20));
-            CreateNewBlock(new Vector3(5, 21));
+            //CreateNewBlock(new Vector3(5, 20));
+            //CreateNewBlock(new Vector3(4, 20));
+            //CreateNewBlock(new Vector3(5, 21));
         }
     }
 
@@ -89,9 +90,9 @@ public class Tetromino : MonoBehaviour
     {
         int x = Mathf.RoundToInt(position.x);
         int y = Mathf.RoundToInt(position.y);
-        Block block = new Block(x, y);
+        GameObject block = Instantiate(Block);
+        block.GetComponent<Block>().Init(x, y);
         Blocks.Add(block);
-        GameController.Blocks[block.X, block.Y] = block;
     }
 
     private void FixedUpdate()
@@ -101,7 +102,7 @@ public class Tetromino : MonoBehaviour
 
     private void Move(Vector2 direction)
     {
-        List<Block> conflictingBlocks = FindConflictsInMove(direction);
+        List<GameObject> conflictingBlocks = FindConflictsInMove(direction);
         if (conflictingBlocks.Count != 0 && direction.y < 0)
         {
             DropBlocks();
@@ -115,24 +116,23 @@ public class Tetromino : MonoBehaviour
         {
             return;
         }
-        foreach (Block block in Blocks)
+        foreach (GameObject block in Blocks)
         {
-            int NewX = block.X + Mathf.RoundToInt(direction.x);
-            int NewY = block.Y + Mathf.RoundToInt(direction.y);
-            GameController.Blocks[block.X, block.Y] = null;
-            GameController.Blocks[NewX, NewY] = block;
-            block.X = NewX;
-            block.Y = NewY;
+            int NewX = block.GetComponent<Block>().X + Mathf.RoundToInt(direction.x);
+            int NewY = block.GetComponent<Block>().Y + Mathf.RoundToInt(direction.y);
+            block.GetComponent<Block>().X = NewX;
+            block.GetComponent<Block>().Y = NewY;
         }
     }
 
-    private List<Block> FindConflictsInMove(Vector2 direction)
+    private List<GameObject> FindConflictsInMove(Vector2 direction)
     {
-        List<Block> conflictingBlocks = new List<Block>();
-        foreach (Block block in Blocks)
+        List<GameObject> conflictingBlocks = new List<GameObject>();
+        foreach (GameObject block in Blocks)
         {
-            int NewX = block.X + (int)direction.x;
-            int NewY = block.Y + (int)direction.y;
+            int NewX = block.GetComponent<Block>().X + (int)direction.x;
+            int NewY = block.GetComponent<Block>().Y + (int)direction.y;
+            Debug.Log($"New: {NewX}, {NewY} Currnet: {block.GetComponent<Block>().X}, {block.GetComponent<Block>().Y}, List Coords: {ExtensionMethods.CoordinatesOf(GameController.instance.Blocks, block)}");
             if (NewY < 0 || NewX < 0 || NewX > 9 || (GameController.Blocks[NewX, NewY] != null) && !Blocks.Contains(GameController.Blocks[NewX, NewY]))
             {
                 conflictingBlocks.Add(block);
@@ -144,7 +144,7 @@ public class Tetromino : MonoBehaviour
     private void DropBlocks()
     {
         Blocks.Clear();
-        InitBlocks((TetrominoType)Mathf.RoundToInt(Random.Range(0, 6)));
+        InitBlocks((TetrominoType)Mathf.RoundToInt(UnityEngine.Random.Range(0, 6)));
     }
 }
 public enum TetrominoType {
@@ -155,4 +155,25 @@ public enum TetrominoType {
     Square = 4,
     L = 5,
     ReverseL = 6
+}
+
+
+public static class ExtensionMethods
+{
+    public static Tuple<int, int> CoordinatesOf(GameObject[,] matrix, GameObject value)
+    {
+        int w = matrix.GetLength(0); // width
+        int h = matrix.GetLength(1); // height
+
+        for (int x = 0; x < w; ++x)
+        {
+            for (int y = 0; y < h; ++y)
+            {
+                if (matrix[x, y] == value)
+                    return Tuple.Create(x, y);
+            }
+        }
+
+        return Tuple.Create(-1, -1);
+    }
 }
