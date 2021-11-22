@@ -4,27 +4,22 @@ using UnityEngine;
 
 public class Block : MonoBehaviour
 {
+    public int number;
+    public Tetromino tetromino;
+    public bool landed = false;
     public int X
     {
-        get {return x;}
-        set { 
-            
-            GameController.instance.Blocks[x, y] = null;
-            x = Mathf.Clamp(value, 0, 9);
-            GameController.instance.Blocks[x, y] = gameObject;
-            transform.position = GetVector3();
+        get {
+            if (!landed) return Mathf.RoundToInt(tetromino.position.x) + x;
+            else return x;
         }
     }
     private int x;
     public int Y
     {
-        get {return y;}
-        set {
-            
-            GameController.instance.Blocks[x, y] = null;
-            y = Mathf.Clamp(value, 0, 24);
-            GameController.instance.Blocks[x, y] = gameObject;
-            transform.position = GetVector3();
+        get {
+            if (!landed) return Mathf.RoundToInt(tetromino.position.y) + y;
+            else return y;
         }
     }
     private int y;
@@ -45,18 +40,41 @@ public class Block : MonoBehaviour
 
         return false;
     }
-    public void Init(int x, int y)
+    public void Init(int x, int y, Tetromino tetromino)
     {
         this.x = x;
         this.y = y;
-        GameController.instance.Blocks[x, y] = gameObject;
-        gameObject.SetActive(true);
+        this.tetromino = tetromino;
+    }
+
+    public void SetPosition(int x, int y)
+    {
+        //if (GameController.instance.Blocks[this.x, this.y] != null && GameController.instance.Blocks[this.x, this.y] == this)
+        //{
+        //    GameController.instance.Blocks[x, y] = null;
+        //}
+        this.x = x;
+        this.y = y;
+        //GameController.instance.Blocks[x, y] = gameObject;
     }
 
     public Vector3 GetVector3()
     {
-        float NewX = (x - 4.5f);
-        float NewY = (y - 9.5f);
-        return new Vector3(NewX, NewY);
+        float ObjectX = (X - 4.5f);
+        float ObjectY = (Y - 9.5f);
+        return new Vector3(ObjectX, ObjectY);
+    }
+
+    void Update()
+    {
+        transform.position = GetVector3();
+        if (!ObjectInArray(GameController.instance.Blocks, gameObject))
+        {
+            gameObject.GetComponent<SpriteRenderer>().color = Color.blue;
+        }
+        else
+        {
+            gameObject.GetComponent<SpriteRenderer>().color = Color.red; 
+        }
     }
 }

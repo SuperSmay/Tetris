@@ -33,10 +33,6 @@ public class Tetromino : MonoBehaviour
         {
             Move(Vector2.down);
         }
-        else if (Input.GetKeyDown(KeyCode.W))
-        {
-            Rotate(Rotation.CW);
-        }
     }
 
     private void InitBlocks(TetrominoType type)
@@ -84,11 +80,11 @@ public class Tetromino : MonoBehaviour
         }
         if (type == TetrominoType.Square)
         {
-            Blocks = new GameObject[2, 2];
-            CreateNewBlock(new Vector3(0, 0), 1, TetrominoType.Square);
-            CreateNewBlock(new Vector3(0, 1), 2, TetrominoType.Square);
-            CreateNewBlock(new Vector3(1, 0), 3, TetrominoType.Square);
-            CreateNewBlock(new Vector3(1, 1), 4, TetrominoType.Square);
+            Blocks = new GameObject[4, 2];
+            CreateNewBlock(new Vector3(2, 0), 1, TetrominoType.Square);
+            CreateNewBlock(new Vector3(2, 1), 2, TetrominoType.Square);
+            CreateNewBlock(new Vector3(3, 0), 3, TetrominoType.Square);
+            CreateNewBlock(new Vector3(3, 1), 4, TetrominoType.Square);
         }
         if (type == TetrominoType.T)
         {
@@ -107,7 +103,7 @@ public class Tetromino : MonoBehaviour
         GameObject block = Instantiate(Block);
         block.GetComponent<Block>().Init(x, y, this);
         Blocks[x, y] = block;
-        Debug.Log($"{Blocks[x, y]}"); 
+        Debug.Log($"{Blocks}");
     }
 
     private void FixedUpdate()
@@ -136,42 +132,41 @@ public class Tetromino : MonoBehaviour
         position = new Vector3(NewX, NewY);
     }
 
-    private void Rotate(Rotation rotation)
-    {
-        //List<GameObject> conflictingBlocks = FindConflictsInRotate(rotation);
-        //if (conflictingBlocks.Count != 0 && direction.y < 0)
-        //{
-        //    DropBlocks();
-        //    return;
-        //}
-        //if (conflictingBlocks.Count != 0 && direction.x < 0)
-        //{
-        //    return;
-        //}
-        //if (conflictingBlocks.Count != 0 && direction.x > 0)
-        //{
-        //    return;
-        //}
-        //foreach (GameObject block in Blocks)
-        //{
-        //    GameController.instance.Blocks[block.GetComponent<Block>().X, block.GetComponent<Block>().Y] = null;
-        //}
-        //foreach (GameObject block in Blocks)
-        //{
-        //    int NewX = block.GetComponent<Block>().X + Mathf.RoundToInt(direction.x);
-        //    int NewY = block.GetComponent<Block>().Y + Mathf.RoundToInt(direction.y);
-        //    block.GetComponent<Block>().SetPosition(NewX, NewY);
-        //}
-        Blocks = ExtensionMethods.RotateMatrix(Blocks);
-    }
+    //private void Rotate(Rotation rotation)
+    //{
+    //    List<GameObject> conflictingBlocks = FindConflictsInRotate(rotation);
+    //    if (conflictingBlocks.Count != 0 && direction.y < 0)
+    //    {
+    //        DropBlocks();
+    //        return;
+    //    }
+    //    if (conflictingBlocks.Count != 0 && direction.x < 0)
+    //    {
+    //        return;
+    //    }
+    //    if (conflictingBlocks.Count != 0 && direction.x > 0)
+    //    {
+    //        return;
+    //    }
+    //    foreach (GameObject block in Blocks)
+    //    {
+    //        GameController.instance.Blocks[block.GetComponent<Block>().X, block.GetComponent<Block>().Y] = null;
+    //    }
+    //    foreach (GameObject block in Blocks)
+    //    {
+    //        int NewX = block.GetComponent<Block>().X + Mathf.RoundToInt(direction.x);
+    //        int NewY = block.GetComponent<Block>().Y + Mathf.RoundToInt(direction.y);
+    //        block.GetComponent<Block>().SetPosition(NewX, NewY);
+    //    }
+    //}
 
     private List<GameObject> FindConflictsInMove(Vector2 direction)
     {
         List<GameObject> conflictingBlocks = new List<GameObject>();
         foreach (GameObject block in Blocks)
         {
-            if (block == null) { continue; }
-            int NewX = block.GetComponent<Block>().X + (int)direction.x;
+            int NewX = block.GetComponent<Block>().X;
+            NewX += (int)direction.x;
             int NewY = block.GetComponent<Block>().Y + (int)direction.y;
             //Debug.Log($"New: {NewX}, {NewY} Currnet: {block.GetComponent<Block>().X}, {block.GetComponent<Block>().Y}, List Coords: {ExtensionMethods.CoordinatesOf(GameController.instance.Blocks, block)}");
             if (NewY < 0 || NewX < 0 || NewX > 9 || GameController.Blocks[NewX, NewY] != null)
@@ -207,13 +202,8 @@ public class Tetromino : MonoBehaviour
     {
         foreach (GameObject block in Blocks)
         {
-            if (block == null) { continue; }
-            GameController.instance.Blocks[block.GetComponent<Block>().X, block.GetComponent<Block>().Y] = block;
-            block.GetComponent<Block>().SetPosition(block.GetComponent<Block>().X, block.GetComponent<Block>().Y);
-            block.GetComponent<Block>().landed = true;
-            block.GetComponent<Block>().tetromino = null;
+            GameController.instance.Blocks[block.GetComponent<Block>().X, block.GetComponent<Block>().X] = block;
         }
-        Blocks = new GameObject[0, 0];
         InitBlocks((TetrominoType)Mathf.RoundToInt(UnityEngine.Random.Range(0, 6)));
     }
 }
@@ -253,22 +243,5 @@ public static class ExtensionMethods
         }
 
         return Tuple.Create(-1, -1);
-    }
-
-    public static GameObject[,] RotateMatrix(GameObject[,] matrix)
-    {
-        int n = matrix.GetLength(0);
-        GameObject[,] ret = new GameObject[n, n];
-
-        for (int i = 0; i < n; ++i)
-        {
-            for (int j = 0; j < n; ++j)
-            {
-                ret[i, j] = matrix[n - j - 1, i];
-                if (ret[i, j] != null) ret[i, j].GetComponent<Block>().SetPosition(i, j);
-            }
-        }
-
-        return ret;
     }
 }
